@@ -6,42 +6,45 @@ on:
   schedule:
     - cron: 0 2 * * *
 
-
 jobs:
   build-and-upload:
     runs-on: ubuntu-22.04
     if: "!contains(github.event.head_commit.message, '[skip]')"
     steps:
-    - uses: actions/checkout@v3
-      with:
-        repository: Wind-Development/WindSpigot
-    - name: Set up JDK 18
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'temurin'
-        java-version: 18
-        server-id: github
-        cache: 'maven'
-        
-    - name: Cache local Maven repository
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
-      
-    - name: Build with Maven
-      run: mvn package --file pom.xml
-      
-    - name: Upload Server Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: WindSpigot-server
-        path: WindSpigot-Server/target/WindSpigot.jar
+      - uses: actions/checkout@v3
+        with:
+          repository: Wind-Development/WindSpigot
 
-    - name: Upload API Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: WindSpigot-API
-        path: WindSpigot-API/target/WindSpigot-API.jar
+      - name: Target Java 17
+        run: sed -i '/<maven.compiler.target>/c <maven.compiler.target>17</maven.compiler.target>' WindSpigot-API/pom.xml WindSpigot-Server/pom.xml
+
+      - name: Set up JDK 18
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: 18
+          server-id: github
+          cache: maven
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build with Maven
+        run: mvn --batch-mode package
+
+      - name: Upload Server Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: WindSpigot-server
+          path: WindSpigot-Server/target/WindSpigot.jar
+
+      - name: Upload API Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: WindSpigot-API
+          path: WindSpigot-API/target/WindSpigot-API.jar
